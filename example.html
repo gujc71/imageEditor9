@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<title>ImageEditor9 - Example</title>
+
+<link rel="stylesheet" href="imageEditor9.css">
+<script src="imageEditor9.js"></script>
+
+<script>
+  var img;
+  var imageEditor;
+  window.onload = function() { 
+    editorDialog= document.getElementById('editorDialog');
+    img = document.getElementById('img1');
+    imageEditor = new ImageEditor9 (document.getElementById("imageEditor9"));
+    imageEditor.onSave = function() {
+      img.src = imageEditor.toDataURL();
+    }
+  }
+
+  function ev_runEditor(){
+    imageEditor.show();
+    imageEditor.setImageSource(img);
+  }
+  function ev_fullEditor(){
+    imageEditor.showFullscreen();
+    imageEditor.setImageSource(img);
+  }
+  
+  function imageChange(event) {
+    var file = event.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataURL = reader.result;
+      img.src = dataURL;
+    };
+    reader.readAsDataURL(file);  
+  }
+</script>
+</head>
+
+<body>
+  <div id="editorDialog" style="position: absolute; left: 5px; top: 30px">
+     <div id="imageEditor9" style="width: 300px; height: 500px; border: 1px solid;"></div>
+  </div>
+  <button onclick="ev_runEditor()">Edit</button>
+  <button onclick="ev_fullEditor()">Fullscreen Edit</button>
+  <input type="file" accept="image/*" onchange="imageChange(event)"><br/>
+  <img id="img1" src="photo.jpg" style="border:1px solid;"/>
+</body>
+
+</html>

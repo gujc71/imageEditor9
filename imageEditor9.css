@@ -1,0 +1,132 @@
+.imageEditor9{
+  position: relative;
+  background-color:black;
+}
+
+.imageEditor9  .workCanvas{
+  position: absolute;
+  display: block; 
+  border: 1px solid gray;
+}
+
+.imageEditor9 > .floatingButton{
+  position:absolute;
+  bottom:40px;
+  right:40px;
+  background-color:#16aae3;
+  color:#FFF;
+  border-radius:50px;
+  text-align:center;
+  box-shadow: 2px 2px 3px #999;
+  z-index:1000;
+  animation: ie9_bot_to_top 2s ease-out;
+  padding: 10px;
+}
+
+.imageEditor9  .mainMenuImg{
+  background-position: -45px 0px;
+}
+
+.imageEditor9 > ul.horizon{
+  position:absolute;
+  right:40px;
+  padding-bottom:10px;
+  bottom:50px;
+  z-index:100;
+}
+
+.imageEditor9 > ul.horizon li{
+  list-style:none;
+  margin-bottom:10px;
+}
+
+.imageEditor9 > ul.vertical{
+  position: absolute;
+  right: 85px;
+  bottom: 23px;
+  z-index: 100;
+  width: 337px;
+  _height: 70px;
+  text-align: right;
+}
+
+
+.imageEditor9 > ul.vertical li{
+  list-style:none;
+  display: inline-block;
+  text-align: right;
+  padding-left: 5px;
+  text-align: center;
+}
+
+
+.imageEditor9 > ul li a{
+  background-color:#16aae3;
+  color:#FFF;
+  border-radius:50px;
+  text-align:center;
+  box-shadow: 2px 2px 3px #999;
+  padding: 10px;
+  display:block;
+}
+
+.imageEditor9 > ul:hover{
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+.imageEditor9 a.floatingButton + ul{
+  visibility: hidden;
+}
+
+.imageEditor9_toggle_menu{
+  visibility: visible !important;
+  animation: ie9_scale_in 0.5s !important;
+}
+
+.imageEditor9 a.floatingButton:hover_ + ul{
+  visibility: visible !important;
+  animation: ie9_scale_in 0.5s !important;
+}
+
+.imageEditor9 a.floatingButton div{
+  animation: ie9_rotate_in 0.5s;
+}
+
+.imageEditor9 a.floatingButton:hover > div{
+  animation: ie9_rotate_out 0.5s;
+}
+
+@keyframes ie9_bot_to_top {
+  0%   {bottom:0px}
+  80%  {bottom:40px}
+}
+
+@keyframes ie9_scale_in {
+  from {transform: scale(0);opacity: 0;}
+  to {transform: scale(1);opacity: 1;}
+}
+
+@keyframes ie9_rotate_in {
+  from {transform: rotate(0deg);}
+  to {transform: rotate(360deg);}
+}
+
+@keyframes ie9_rotate_out {
+  from {transform: rotate(360deg);}
+  to {transform: rotate(0deg);}
+}
+
+.floatingButtonImg {
+  width:20px;
+  height:20px; 
+  background-image:url(imageEditor9.png);
+}
+
+.imageEditor9_msg {
+  z-index: 9999;
+  border: 1px solid;
+  position: absolute;
+  left: 50px;
+top: 100px;
+}  

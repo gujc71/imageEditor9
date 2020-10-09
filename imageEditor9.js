@@ -31,7 +31,19 @@ var util9 = {
         A[B] = C[B];
     }
     return A;
-  },  
+  },
+  clone: function (obj) {
+    if (obj === null || typeof(obj) !== 'object') return obj;
+
+    var copy = obj.constructor();
+
+    for (var attr in obj) {
+      if (obj.hasOwnProperty(attr)) {
+        copy[attr] = obj[attr];
+      }
+    }
+    return copy;
+  },
   addEvent: function(obj, evName, evHandler) {
       if (obj.addEventListener) {
           obj.addEventListener(evName, evHandler, false);
@@ -98,10 +110,6 @@ var util9 = {
         rotatedMouseY>node.top-FONTSIZE &&
         rotatedMouseY<node.top;
     return mouseIsInside;
-  }  ,
-  openFullscreen: function(elem) {
-    const rfs = elem.mozRequestFullScreen || elem.mozRequestFullScreen || elem.webkitRequestFullScreen || elem.msRequestFullscreen;
-    rfs.call(elem);
   }
 }    
 
@@ -120,6 +128,8 @@ Function.prototype.closureListener = function() {
   };
 };
 
+const ImageEditor9_initInfo = {type:TYPE_BACK, angle:0, zoom:1, left: -130, top: -30, lock: false} 
+
 function ImageEditor9(target) {
   if (!target) return;
   
@@ -129,7 +139,7 @@ function ImageEditor9(target) {
   this.actionType = null;
   this.activeNode = null;
   this.canvasZoom = 1;
-  this.imgInfo = {type:TYPE_BACK, angle:0, left: -130, top: -30, lock: false} 
+  this.imgInfo = util9.clone(ImageEditor9_initInfo);
   this.userPhoto = null;
   this.backImg = this.backCanvas = this.backCtx = null;
   this.lockImg = document.createElement('img');
@@ -155,20 +165,24 @@ function ImageEditor9(target) {
   util9.addEvent(this.workCanvas, "touchmove",  this.touchmove.closureListener(this));
   util9.addEvent(this.workCanvas, "touchend",   this.stopMoving.closureListener(this));
 
-  this.workDiv.style.display ="none";
+  this.workDiv.classList.add("imageEditor9_hidden");
   this.setMenus(this.workDiv);
   
   this.workDiv.addEventListener("fullscreenchange", this.fullscreenchange.closureListener(this));
   this.workDiv.addEventListener("mozfullscreenchange", this.fullscreenchange.closureListener(this));
   this.workDiv.addEventListener("webkitfullscreenchange", this.fullscreenchange.closureListener(this));
   
-  window.addEventListener('orientationchange', this.windows_orientationchange_ev.closureListener(this));
+  // dialog
+  var dialogDiv = document.createElement('DIV');
+  dialogDiv.classList.add("imageEditor9_hidden");
+  dialogDiv.classList.add("imageEditor9_dialog");
+  document.body.appendChild(dialogDiv);
 
-}
+  var backDiv = document.createElement('DIV');
+  backDiv.classList.add("imageEditor9_background");
+  dialogDiv.appendChild(backDiv);
 
-ImageEditor9.prototype.windows_orientationchange_ev = function(){
-  this.subMenu.classList.remove( "imageEditor9_toggle_menu" );
-  this.setImageInfo();
+  this.dialogDiv = dialogDiv;
 }
 
 ImageEditor9.prototype.setMenus = function(parent){
@@ -178,7 +192,7 @@ ImageEditor9.prototype.setMenus = function(parent){
             menuBtn.classList.add(item);
         })
         parent.appendChild(menuBtn);
-
+    
         var menuImg = document.createElement("DIV")
         menuBtn.appendChild(menuImg);    
         imgStyles.forEach(function(item){ 
@@ -232,9 +246,9 @@ ImageEditor9.prototype.imageEditor9_toggle_menu = function(event){
 
   var classname = "";
   if (this.isFullscreen) {
-  classname = window.screen.availWidth > window.screen.availHeight ? "vertical" : "horizon";
+    classname = window.screen.availWidth > window.screen.availHeight ? "vertical" : "horizon";
   } else {
-  classname = util9.getStyleI(this.workDiv, "width") > util9.getStyleI(this.workDiv, "height") ? "vertical" : "horizon";
+    classname = util9.getStyleI(this.workDiv, "width") > util9.getStyleI(this.workDiv, "height") ? "vertical" : "horizon";
   }
   this.subMenu.classList.add(classname);
 }
@@ -278,10 +292,10 @@ ImageEditor9.prototype.mousemove4canvas = function(event){
 ImageEditor9.prototype.setImageSource = function(img){ 
   this.angle = 0;
   this.userPhoto = img;
-  this.imgInfo.angle = 0;
+  this.imgInfo = util9.clone(ImageEditor9_initInfo);
   this.activeNode = this.imgInfo;
   
-  this.cloneImage(img, img.width, img.height);
+  this.cloneImage(img, img.naturalWidth, img.naturalHeight);
   this.setImageInfo();
 }
 
@@ -304,7 +318,7 @@ ImageEditor9.prototype.cloneImage = function(img, w, h){
   ctx.restore()  
 }
 
-ImageEditor9.prototype.setImageInfo = function(){ 
+ImageEditor9.prototype.setImageInfo = function(isNoZoom){ 
   var w = h = 0;
   if (this.isFullscreen) {
     w = window.screen.availWidth;
@@ -313,9 +327,9 @@ ImageEditor9.prototype.setImageInfo = function(){
     w = util9.getStyleI(this.workDiv, "width");
     h = util9.getStyleI(this.workDiv, "height");
   }
-
-  if (this.userPhoto.width<w & this.userPhoto.height < h) {
-  this.canvasZoom = 1;
+  
+  if (isNoZoom || (this.imgInfo.width<w-10 && this.imgInfo.height < h-10)) {
+    this.canvasZoom = 1;
   } else {
     var rate_h = h / this.imgInfo.height;
     var rate_w = w / this.imgInfo.width;
@@ -335,6 +349,10 @@ ImageEditor9.prototype.setImageInfo = function(){
   this.workCanvas.style.top  = ((h - this.workCanvas.height)  / 2  -1) + "px";
 
   this.draw();
+  /*
+  if ( (w>h & this.workCanvas.width < this.workCanvas.height) || (w<h & this.workCanvas.width > this.workCanvas.height) ) {
+    this.showMessage ("The image proportions are not suitable for editing.</br>Automatically rotate the image.");
+  }*/
 }
 
 ImageEditor9.prototype.rotate_resize = function(){ 
@@ -545,16 +563,18 @@ ImageEditor9.prototype.draw = function(){
       return;
     }
     
-    var x = this.imgInfo.left+this.imgInfo.width/2, 
-        y = this.imgInfo.top+this.imgInfo.height/2;
+    var centerX = this.imgInfo.left   + this.imgInfo.width /2, 
+        centerY = this.imgInfo.top    + this.imgInfo.height/2,
+        sizeX   = this.imgInfo.width  * this.imgInfo.zoom,
+        sizeY   = this.imgInfo.height * this.imgInfo.zoom;
 
     this.backCtx.clearRect(0, 0, this.backCanvas.width, this.backCanvas.height);
     this.backCtx.save();
-    this.backCtx.translate(x, y);
+    this.backCtx.translate(centerX, centerY);
     this.backCtx.rotate(this.imgInfo.angle);
-    this.backCtx.drawImage(this.imgInfo.img, -this.imgInfo.width/2, -this.imgInfo.height/2, this.imgInfo.width, this.imgInfo.height);
+    this.backCtx.drawImage(this.imgInfo.img, -sizeX/2, -sizeY/2, sizeX, sizeY);
     this.backCtx.rotate(-this.imgInfo.angle);
-    this.backCtx.translate(-x, -y);
+    this.backCtx.translate(-centerX, -centerY);
     //this.backCtx.restore();
     if (this.backImg) this.backCtx.drawImage(this.backImg, 0, 0, this.backCanvas.width, this.backCanvas.height);
 
@@ -656,6 +676,8 @@ ImageEditor9.prototype.drawUserImageMenu = function(node, color){
 ImageEditor9.prototype.zoomin = function(zoom){ 
   if (!this.activeNode || this.activeNode.width + this.activeNode.width*zoom<80) {return;}
 
+
+  this.activeNode.zoom += zoom;
   if (this.activeNode.type === TYPE_TEXT) {
     var old_w = this.activeNode.width;
     var old_h = this.activeNode.height;
@@ -666,11 +688,6 @@ ImageEditor9.prototype.zoomin = function(zoom){
     this.activeNode.height = this.activeNode.fontSize;
     this.activeNode.top   -= (this.activeNode.height - old_h) / 2;
     this.activeNode.left  -= (this.activeNode.width  - old_w) / 2;
-  } else {
-    this.activeNode.width  += this.activeNode.width * zoom;
-    this.activeNode.height += this.activeNode.height * zoom;
-    this.activeNode.top    -= (this.activeNode.height * zoom) / 2;
-    this.activeNode.left   -= (this.activeNode.width * zoom) / 2;
   }
 
   this.draw();
@@ -692,12 +709,12 @@ ImageEditor9.prototype.getImage = function(){
 }
 
 ImageEditor9.prototype.toDataURL = function(){ 
-  this.workCanvas.width  = this.imgInfo.img.width;
-  this.workCanvas.height = this.imgInfo.img.height;
+  this.imgInfo.width  = this.imgInfo.img.width;
+  this.imgInfo.height = this.imgInfo.img.height;
 
-    this.workCtx.drawImage(this.backCanvas, 0, 0, this.workCanvas.width, this.workCanvas.height);
+  this.setImageInfo(true);
 
-    return this.workCanvas.toDataURL();
+  return this.workCanvas.toDataURL();
 }
 
 
@@ -707,6 +724,7 @@ ImageEditor9.prototype.addImageNode = function(url){
     width: 100,
     height: 100,
     angle: 0,
+    zoom:1,
     lock: false
   };
   newNode.top = (this.workCanvas.height-newNode.height) / 2 + this.elementList.length*10;
@@ -734,6 +752,7 @@ ImageEditor9.prototype.addTextNode = function(text){
     height: FONTSIZE,
     fontSize: FONTSIZE,
     angle: 0,
+    zoom:1,
     color: "#ffff00",
     text: text,
     lock: false
@@ -749,41 +768,76 @@ ImageEditor9.prototype.addTextNode = function(text){
 }
 
 ImageEditor9.prototype.show = function(){ 
-  this.workDiv.style.display ="";
+  this.workDiv.classList.remove("imageEditor9_hidden");
 }
 
 ImageEditor9.prototype.showFullscreen = function(){
-  this.isFullscreen = true;
-  util9.openFullscreen(this.workDiv);
   this.show();
+  var elem = this.workDiv;      
+  var rfs = elem.mozRequestFullScreen || elem.mozRequestFullScreen || elem.webkitRequestFullScreen || elem.msRequestFullscreen;
+  if (!rfs) {
+      this.showFulldocument();
+      return;
+  }
+  rfs.call(elem);
+  this.isFullscreen = true;
 }
 
 ImageEditor9.prototype.fullscreenchange = function(){
   if (this.isFullscreen && !document.fullscreenElement) {
-  this.close();
+    this.close();
   }  
 }
 
+ImageEditor9.prototype.showFulldocument = function(){
+  this.workParent = this.workDiv.parentElement;
+  this.workWidth  = this.workDiv.style.width; // save info
+  this.workHeight = this.workDiv.style.height;
+  
+  var w = document.documentElement.clientWidth,
+      h = document.documentElement.clientHeight;
+    
+  this.workDiv.style.width  = w + "px";
+  this.workDiv.style.height = h + "px";
+
+  this.dialogDiv.appendChild(this.workDiv);
+  this.dialogDiv.classList.remove("imageEditor9_hidden");
+  
+  this.show();
+}
+
 ImageEditor9.prototype.close = function(){ 
+  if (this.workParent) {
+    this.workParent.appendChild(this.workDiv);  
+    this.workParent = null;
+    this.workDiv.style.width  = this.workWidth;
+    this.workDiv.style.height = this.workHeight;
+  }else
   if (this.isFullscreen && document.exitFullscreen) {
     document.exitFullscreen(); 
     this.isFullscreen = false;
   }
-  this.workDiv.style.display ="none";
+  this.workDiv.classList.add("imageEditor9_hidden");
+  this.dialogDiv.classList.add("imageEditor9_hidden");
 }
 
 ImageEditor9.prototype.save = function(){ 
-    this.close();
     if (this.onSave) this.onSave();
+    this.close();
 }
 
 ImageEditor9.prototype.showMessage = function(msg){ 
-  if (!this.msg) {
-    var div = document.createElement('div');
-    this.workDiv.appendChild(div);  
-    div.classList.add("imageEditor9_msg");
-  
-    this.msg = div;
+  if (!msg) return;
+
+  if (!this.snackbar) {
+      var div = document.createElement('div');
+      document.documentElement.appendChild(div);  
+      div.classList.add("imageEditor9_snackbar");
+      this.snackbar = div;
   }
-  this.msg.innerText = msg;
+  this.snackbar.innerHTML = msg;
+  this.snackbar.classList.add("imageEditor9_snackbar_show");
+  var _this = this;
+  setTimeout(function(){ _this.snackbar.classList.remove("imageEditor9_snackbar_show"); }, 3000);
 }
+

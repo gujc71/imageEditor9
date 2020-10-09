@@ -1,6 +1,7 @@
 .imageEditor9{
   position: relative;
   background-color:black;
+  _background-color: rgba(0, 0, 0, 0.6);
 }
 
 .imageEditor9  .workCanvas{
@@ -123,10 +124,64 @@
   background-image:url(imageEditor9.png);
 }
 
-.imageEditor9_msg {
-  z-index: 9999;
-  border: 1px solid;
-  position: absolute;
-  left: 50px;
-top: 100px;
-}  
+.imageEditor9_dialog{
+	position: fixed;
+	top: 0; left: 0;
+	width: 100%; height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items : center;
+}
+.imageEditor9_background {
+    background-color:black;
+	_background-color: rgba(0, 0, 0, 0.6);
+	width: 100%; height: 100%;
+	position: absolute;
+}
+.imageEditor9_hidden {
+	display: none;
+}
+
+
+.imageEditor9_snackbar {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -150px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 10px;
+  padding: 5px;
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  bottom: 30px;
+  font-size: 17px;
+  opacity: 0.7;
+}
+
+.imageEditor9_snackbar_show {
+  visibility: visible;
+  -webkit-animation: imageEditor9_fadein 0.5s, imageEditor9_fadeout 0.5s 2.5s;
+  animation: imageEditor9_fadein 0.5s, imageEditor9_fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes imageEditor9_fadein {
+  from {bottom: 0; opacity: 0;} 
+  to {bottom: 30px; opacity: 0.7;}
+}
+
+@keyframes imageEditor9_fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 0.7;}
+}
+
+@-webkit-keyframes imageEditor9_fadeout {
+  from {bottom: 30px; opacity: 0.7;} 
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes imageEditor9_fadeout {
+  from {bottom: 30px; opacity: 0.7;}
+  to {bottom: 0; opacity: 0;}
+}		

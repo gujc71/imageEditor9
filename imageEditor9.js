@@ -1,5 +1,5 @@
 const NODE_MOVE   = "move";
-const NODE_MOVEUN = "unknown";
+const NODE_READY  = "ready";
 const NODE_RESIZE = "resize";
 const NODE_ROTATE = "rotate";
 const MENU_REMOVE = "remove";
@@ -11,6 +11,10 @@ const TYPE_BACK  = 0;   // background image, user photo
 const TYPE_IMAGE = 1;   // topper image
 const TYPE_TEXT  = 2;   // topper text
 const FONTSIZE   = 80;
+
+const DIRECT_NONE = 0;
+const DIRECT_HORIZON = 1;
+const DIRECT_VERTICAL = 2;
 
 var util9 = {
     getStyle: function(src, style) {
@@ -110,6 +114,15 @@ var util9 = {
         rotatedMouseY>node.top-FONTSIZE &&
         rotatedMouseY<node.top;
     return mouseIsInside;
+  },
+  getSlope: function (x1, y1, x2, y2) {  
+    var nX = Math.abs(x1 - x2);
+    var nY = Math.abs(y1 - y2);
+    var nDis = nX + nY;
+
+    if(nDis < 20) { return -1 }
+
+    return parseFloat((nY / nX).toFixed(2), 10);
   }
 }    
 
@@ -127,6 +140,8 @@ Function.prototype.closureListener = function() {
       return A.apply(B, [E, D].concat(C));
   };
 };
+
+const imageEditor9_base_slope = ((window.innerHeight / 2) / window.innerWidth).toFixed(2) * 1;
 
 const ImageEditor9_initInfo = {type:TYPE_BACK, angle:0, zoom:1, left: -130, top: -30, lock: false} 
 
@@ -469,10 +484,13 @@ ImageEditor9.prototype.touchstart = function(event){
   this.sy = touches[0].pageY;
   
   if (touches.length>1) {         
-    this.actionType = NODE_RESIZE;
-    firstSize = touches[0].pageX - touches[1].pageX;
+    this.actionType = NODE_READY;
+    this.sx2 = touches[1].pageX;
+    this.sy2 = touches[1].pageY;
+	
+    //firstSize = touches[0].pageX - touches[1].pageX;
     originalInfo = Object.assign({}, this.activeNode);
-    changedAngle = util9.getAngle(this.sx, this.sy, touches[1].pageX, touches[1].pageY);
+    //changedAngle = util9.getAngle(this.sx, this.sy, touches[1].pageX, touches[1].pageY);
     return;
   }    
 
@@ -501,13 +519,23 @@ ImageEditor9.prototype.touchstart = function(event){
 var changedAngle=null;
 
 ImageEditor9.prototype.touchmove = function(event){
-    event.preventDefault();
-    if (!this.actionType) return;
+  event.preventDefault();
+  if (!this.actionType) return;
 
-    var touches = event.touches;
-    var pageX = touches[0].pageX,
-        pageY = touches[0].pageY;
+  var touches = event.touches;
+  var pageX = touches[0].pageX,
+      pageY = touches[0].pageY;
 
+  if (this.actionType === NODE_READY) { 
+	 var slope = Math.max(util9.getSlope(this.sx,  this.sy,  touches[0].pageX, touches[0].pageY), 
+						  util9.getSlope(this.sx2, this.sy2, touches[1].pageX, touches[1].pageY));
+	 if (slope === -1) return;
+	 this.actionType = slope > imageEditor9_base_slope ? NODE_RESIZE : NODE_ROTATE;
+	 this.sx = touches[0].pageX;
+	 this.sy = touches[0].pageY;
+     firstSize = touches[0].pageX - touches[1].pageX;
+     changedAngle = util9.getAngle(this.sx, this.sy, touches[1].pageX, touches[1].pageY);
+  } else
   if (this.actionType === NODE_RESIZE) { 
       var rate =  (touches[0].pageX-touches[1].pageX) / firstSize;
       if (rate<0.3) {rate = 0.3; return;}
